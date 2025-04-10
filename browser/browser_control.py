@@ -1,6 +1,7 @@
-import re
 import random
 import json
+import time
+
 from playwright.sync_api import sync_playwright
 
 from exeption import CustomBadRequestWithDetail
@@ -40,11 +41,21 @@ class Browser:
         self.context.set_offline(offline)
 
     def navigate(self, url: str, wait_until_full_load: bool = True):
-        login_url = 'https://id.centraldispatch.com/Account/Login'
         if self.page:
+            # Navigate to the URL
             self.page.goto(url, wait_until='networkidle' if wait_until_full_load else None)
+
+            if wait_until_full_load:
+                self.page.wait_for_load_state('networkidle')
+
             if self.page.url == url:
                 print("Page loaded successfully.")
+                if wait_until_full_load:
+                    time.sleep(3)
+                    content = self.page.content()
+                    if "SIGN IN" in content:
+                        self.browser.close()
+                        raise CustomBadRequestWithDetail('update_local_storage')
             else:
                 print("Page failed to load.")
                 self.browser.close()
@@ -97,46 +108,3 @@ class Browser:
         if self.browser:
             self.browser.close()
 
-
-
-def process_json(input_text: str) -> dict:
-    def fix_json_format(text: str) -> str:
-        """
-        Функция исправляет формат JSON-строки, добавляя кавычки вокруг ключей.
-        """
-        # Ищем случаи вида {key: или , key:
-        pattern = r'([{,]\s*)([A-Za-z0-9_.\-\$]+)\s*:'
-        fixed = re.sub(pattern, r'\1"\2":', text)
-        return fixed
-
-    def process_json(input_text: str) -> dict:
-        """
-        Функция пытается преобразовать строку с ошибками в корректный JSON.
-        Если в некоторых значениях есть строка, представляющая JSON-объект,
-        производится дополнительное преобразование.
-        """
-        # Сначала исправляем исходный текст
-        fixed_text = fix_json_format(input_text)
-
-        # Пытаемся распарсить исправленную строку
-        try:
-            data = json.loads(fixed_text)
-        except Exception as e:
-            print("Ошибка при парсинге JSON:", e)
-            raise
-
-        # Если значение какого-либо ключа является строкой и содержит фигурные скобки,
-        # пробуем преобразовать его в JSON-объект.
-        for key, value in data.items():
-            if isinstance(value, str) and value.strip().startswith("{") and value.strip().endswith("}"):
-                try:
-                    data[key] = json.loads(fix_json_format(value))
-                except Exception:
-                    # Если не удалось распарсить — оставляем исходное значение
-                    pass
-        return data
-
-    result = process_json(input_text)
-
-    formatted_json = json.dumps(result, indent=2, ensure_ascii=False)
-    return json.loads(formatted_json)
