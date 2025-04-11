@@ -1,3 +1,5 @@
+import time
+
 from flask import Flask, request, make_response
 from browser.automatization import Listing
 from multiprocessing import Process, Queue

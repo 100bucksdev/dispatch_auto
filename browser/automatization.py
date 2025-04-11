@@ -158,10 +158,15 @@ class Listing:
         if self.browser.page.url != self._LISTING_URL:
             self.browser.navigate(self._LISTING_URL)
         self.fill_string_field_by_id('delivery-location-name', self.get_processed_terminal())
+        time.sleep(0.2)
         self.browser.page.wait_for_selector('#ids-search-input-listbox-delivery-location-name')
+        time.sleep(0.2)
         self.browser.page.locator('#ids-search-input-listbox-delivery-location-name li').first.click()
+        time.sleep(0.2)
         self.fill_string_field_by_id('ids-combo-box-input-delivery-location-type', 'Terminal')
+        time.sleep(0.2)
         self.browser.page.wait_for_selector('#listbox-item-Terminal')
+        time.sleep(0.2)
         self.browser.page.locator('#listbox-item-Terminal').click()
         print("[INFO] Delivery Info заполнено")
 
@@ -169,8 +174,11 @@ class Listing:
         print("[INFO] Заполнение Vehicle Info")
         if self.browser.page.url != self._LISTING_URL:
             self.browser.navigate(self._LISTING_URL)
+        time.sleep(0.2)
         self.browser.page.locator('[data-testid="listings_editor_vin_input_0"]').fill(self.get_vin())
+        time.sleep(0.2)
         self.browser.page.locator('[name="vehicle-detail-text-area-row"]').fill(self._DEFAULT_TEXT_VEHICLE_INFO)
+        time.sleep(0.2)
 
     def fill_delivery_details(self):
         print("[INFO] Заполнение Delivery Details")
@@ -182,14 +190,23 @@ class Listing:
         current_date = datetime.now()
         future_date = current_date + timedelta(days=3)
         self.browser.page.locator("#listings_editor_date-available-to-ship").fill(current_date.strftime("%m/%d/%Y"))
+        time.sleep(0.2)
         self.browser.page.locator("#listings_editor_desired-delivery-date").fill(future_date.strftime("%m/%d/%Y"))
+        time.sleep(0.2)
         self.browser.page.locator('#amount-to-pay-carrier').fill(price)
+        time.sleep(0.2)
         self.browser.page.locator('#cod-amount').fill(price)
+        time.sleep(0.2)
         self.browser.page.locator('#cod-payment-method').click()
+        time.sleep(0.2)
         self.browser.page.wait_for_selector('#listbox-item-Cash\\/CertifiedFunds')
+        time.sleep(0.2)
         self.browser.page.locator('#listbox-item-Cash\\/CertifiedFunds').click()
+        time.sleep(0.2)
         self.browser.page.locator('#cod-location').click()
+        time.sleep(0.2)
         self.browser.page.wait_for_selector('#listbox-item-Delivery')
+        time.sleep(0.2)
         self.browser.page.locator('#listbox-item-Delivery').click()
 
     def fill_additional_info(self):
@@ -197,7 +214,9 @@ class Listing:
         if self.browser.page.url != self._LISTING_URL:
             self.browser.navigate(self._LISTING_URL)
         self.browser.page.locator('#addtional-info-loadid').fill(f'{self.get_vin()[-6:]} TITLE MUST BE PICKED UP')
+        time.sleep(0.2)
         self.browser.page.locator('#addtional-info-terms').fill('Forklift on/off **Pick Up TITLE!** Zelle/wire payment')
+        time.sleep(0.2)
         self.browser.page.locator('.interstate-checkbox-input').click()
 
     def fill_all_fields(self):
@@ -248,8 +267,11 @@ class Listing:
     def get_price_for_delivery(self):
         print("[INFO] Получение цены доставки")
         self.browser.page.locator('.check-price-button').click()
+        time.sleep(0.2)
         self.browser.page.wait_for_selector('table tbody tr')
+        time.sleep(0.2)
         self.browser.page.wait_for_selector('label:has-text("Status")')
+        time.sleep(0.2)
         price = self.browser.page.locator('table tbody tr td.ant-table-cell.column-listed-price div').first.inner_text().strip()
         self.browser.page.locator('#ids-slideout-close-button').click()
         return price.replace('$', '')
