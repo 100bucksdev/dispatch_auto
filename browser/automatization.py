@@ -14,7 +14,7 @@ class Listing:
 
     _DEFAULT_TEXT_VEHICLE_INFO = '''Please pick up the TITLE and Keys !Please take some PHOTOS around the car AT PICK UP and DROP OFF  send it to 954-703-4009 or  logisticsTauto@gmail.com !\nI’m paying on delivery by ZELLE'''
 
-    def __init__(self, order: dict, local_storage: str, headless: bool = False):
+    def __init__(self, order: dict, local_storage: str, headless: bool = True):
         self.browser = Browser(headless=headless)
         self.order = order
         self.loca_storage = local_storage
