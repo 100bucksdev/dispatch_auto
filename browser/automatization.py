@@ -163,11 +163,11 @@ class Listing:
         time.sleep(0.2)
         self.browser.page.locator('#ids-search-input-listbox-delivery-location-name li').first.click()
         time.sleep(0.2)
-        self.fill_string_field_by_id('ids-combo-box-input-delivery-location-type', 'Terminal')
+        self.fill_string_field_by_id('ids-combo-box-input-delivery-location-type', 'Unspecified')
         time.sleep(0.2)
-        self.browser.page.wait_for_selector('#listbox-item-Terminal')
+        self.browser.page.wait_for_selector('#listbox-item-Unspecified')
         time.sleep(0.2)
-        self.browser.page.locator('#listbox-item-Terminal').click()
+        self.browser.page.locator('#listbox-item-Unspecified').click()
         print("[INFO] Delivery Info заполнено")
 
     def fill_vehicle_info(self):
