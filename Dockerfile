@@ -39,4 +39,4 @@ ENV PYTHONUNBUFFERED=1 \
 
 EXPOSE 8000
 
-CMD ["gunicorn", "--workers", "3", "--bind", "0.0.0.0:8000", "app:app"]
+CMD ["gunicorn", "--workers", "3", "--bind", "0.0.0.0:6000", "app:app"]
