@@ -215,13 +215,13 @@ class Listing:
         self.browser.page.evaluate("window.scrollTo(0, 0)")
         screenshot_path = 'pickup_location.png'
         self.browser.page.screenshot(path=screenshot_path)
-        with open(screenshot_path, 'rb') as f:
-            return f.read()
+        self.browser.close()
 
+
+    @classmethod
     def delete_screenshots(self):
         if os.path.exists('pickup_location.png'):
             os.remove('pickup_location.png')
-        self.browser.close()
 
     def post_listing(self):
         print("[INFO] Публикация листинга")

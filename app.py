@@ -15,9 +15,8 @@ def run_listing(order, local_storage, mode, queue):
         elif mode == 'preview':
             listing.fill_pickup_info()
             listing.fill_delivery_info()
-            image = listing.get_screenshots()
-            listing.delete_screenshots()
-            queue.put({'image': image})
+            listing.get_screenshots()
+            queue.put({'image': 'pickup_location.png'})
         else:
             queue.put({'error': 'invalid_mode'})
     except Exception as e:
@@ -47,7 +46,9 @@ def post_listing():
     elif 'success' in result:
         return {'success': result['success']}, 200
     elif 'image' in result:
-        return make_response(result['image'], 200, {'Content-Type': 'image/png'})
+        with open(result['image'], 'rb') as img_file:
+            img_data = img_file.read()
+        return make_response(img_data, 200, {'Content-Type': 'image/png'})
     else:
         return {'error': 'unknown_error'}, 500
 
