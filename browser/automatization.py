@@ -19,7 +19,7 @@ class Listing:
 I’m paying on delivery by ZELLE'''
 
 
-    def __init__(self, order: dict, local_storage: str, headless: bool = False):
+    def __init__(self, order: dict, local_storage: str, headless: bool = True):
         self.browser = Browser(headless=headless)
         self.order = order
         self.loca_storage = local_storage
