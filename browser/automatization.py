@@ -1,4 +1,3 @@
-import json
 import os
 import time
 import random
@@ -15,7 +14,7 @@ class Listing:
 
     _DEFAULT_TEXT_VEHICLE_INFO = '''Please pick up the TITLE and Keys !Please take some PHOTOS around the car AT PICK UP and DROP OFF  send it to 954-703-4009 or  logisticsTauto@gmail.com !\nI’m paying on delivery by ZELLE'''
 
-    def __init__(self, order: dict, local_storage: str, headless: bool = True):
+    def __init__(self, order: dict, local_storage: str, headless: bool = False):
         self.browser = Browser(headless=headless)
         self.order = order
         self.loca_storage = local_storage
@@ -82,15 +81,14 @@ class Listing:
 
     def fill_pickup_info(self):
         if self.browser.page.url != self._LISTING_URL:
-            print("[INFO] Навигация на страницу перед заполнением Pickup Info")
             self.browser.navigate(self._LISTING_URL)
         max_attempts = 3
         attempt = 0
 
         while attempt < max_attempts:
             try:
+                # Формируем исходную строку
                 original_string = f'{self.get_auction()} {self.get_location()}'.upper()
-                print(f"[DEBUG] Попытка №{attempt + 1}: ищем локацию {original_string}")
 
                 strings_to_try = [original_string]
                 if '-' in original_string:
@@ -101,41 +99,59 @@ class Listing:
                 for current_string in strings_to_try:
                     if success:
                         break
+
                     self.fill_string_field_by_id('pickup-location-name', '')
                     time.sleep(0.5)
 
                     for char in current_string:
                         self.fill_one_char_in_field_by_id('pickup-location-name', char)
                         time.sleep(random.uniform(0.2, 0.6))
+
                         try:
-                            self.browser.page.wait_for_selector('#ids-search-input-listbox-pickup-location-name', timeout=3000)
+
+                            self.browser.page.wait_for_selector('#ids-search-input-listbox-pickup-location-name',
+                                                                timeout=3000)
+
                             list_items = self.browser.page.locator('#ids-search-input-listbox-pickup-location-name li')
-                            if list_items.first.inner_text().upper() == current_string or list_items.count() == 1:
+                            if list_items.first.inner_text().upper() == current_string:
+                                # Если первый элемент совпадает с искомым, кликаем по нему
+                                time.sleep(0.4)
+                                list_items.first.click()
+                                success = True
+                                break
+                            item_count = list_items.count()
+                            if item_count == 1:
+                                time.sleep(0.4)
                                 list_items.first.click()
                                 success = True
                                 break
                         except Exception as e:
-                            print(f"[WARNING] Ошибка при выборе элемента: {e}")
+
                             continue
 
+                    if success:
+                        break
+
                 if success:
-                    print("[INFO] Локация успешно выбрана, выбираем тип 'Auction'")
+                    # Если успешно выбрали локацию, переходим к выбору типа
+                    time.sleep(0.2)
                     self.fill_string_field_by_id('ids-combo-box-input-pickup-location-type', 'Auction')
+                    time.sleep(0.2)
                     self.browser.page.wait_for_selector('#listbox-item-Auction')
+                    time.sleep(0.2)
                     self.browser.page.locator('#listbox-item-Auction').click()
                     return
                 else:
-                    print("[WARNING] Не удалось выбрать локацию. Повтор попытки...")
+                    # Если не удалось выбрать локацию, увеличиваем счетчик попыток
                     attempt += 1
                     time.sleep(1)
             except Exception as e:
-                print(f"[ERROR] Ошибка при попытке #{attempt + 1}: {e}")
                 attempt += 1
                 time.sleep(1)
 
-        print("[FATAL] Превышено максимальное количество попыток")
-        self.browser.close()
-        raise CustomBadRequestWithDetail('maximal_attempts_reached_while_filling_pickup_location')
+        if attempt >= max_attempts:
+            self.browser.close()
+            raise CustomBadRequestWithDetail('maximal_attempts_reached_while_filling_pickup_location')
 
     def fill_delivery_info(self):
         print("[INFO] Заполнение Delivery Info")
