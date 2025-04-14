@@ -29,6 +29,28 @@ RUN apt-get update && apt-get install -y \
     libgdk-pixbuf2.0-0 \
     libpangocairo-1.0-0 \
     libcairo-gobject2 \
+    libgstreamer1.0-0 \
+    libgtk-4-1 \
+    libgraphene-1.0-0 \
+    libxslt1.1 \
+    libwoff2-1.0.2 \
+    libvpx7 \
+    libevent-2.1-7 \
+    libopus0 \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    libflite1 \
+    libwebpdemux2 \
+    libharfbuzz-icu0 \
+    libwebpmux3 \
+    libenchant-2-2 \
+    libsecret-1-0 \
+    libhyphen0 \
+    libmanette-0.2-0 \
+    libpsl5 \
+    libnghttp2-14 \
+    libgles2 \
+    libx264-164 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
