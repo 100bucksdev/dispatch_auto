@@ -24,6 +24,11 @@ RUN apt-get update && apt-get install -y \
     libasound2 \
     libatspi2.0-0 \
     xvfb \
+    libxcursor1 \
+    libgtk-3-0 \
+    libgdk-pixbuf2.0-0 \
+    libpangocairo-1.0-0 \
+    libcairo-gobject2 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -36,9 +41,6 @@ COPY . .
 
 ENV PYTHONUNBUFFERED=1 \
     FLASK_ENV=production \
-    PORT=6000 \
-    DISPLAY=:99
+    PORT=6000
 
 EXPOSE 6000
-
-CMD ["sh", "-c", "Xvfb :99 -screen 0 1920x1080x24 & gunicorn --workers 3 --bind 0.0.0.0:6000 app:app"]
