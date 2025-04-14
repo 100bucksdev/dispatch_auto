@@ -2,7 +2,7 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Устанавливаем системные зависимости, необходимые для Playwright
+# Устанавливаем системные зависимости, необходимые для Playwright и xvfb
 RUN apt-get update && apt-get install -y \
     gcc \
     libglib2.0-0 \
@@ -23,20 +23,22 @@ RUN apt-get update && apt-get install -y \
     libcairo2 \
     libasound2 \
     libatspi2.0-0 \
+    xvfb \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN pip install playwright && playwright install-deps && playwright install
+RUN pip install playwright && playwright install
 
 COPY . .
 
 ENV PYTHONUNBUFFERED=1 \
     FLASK_ENV=production \
-    PORT=8000
+    PORT=6000 \
+    DISPLAY=:99
 
-EXPOSE 8000
+EXPOSE 6000
 
-CMD ["gunicorn", "--workers", "3", "--bind", "0.0.0.0:6000", "app:app"]
+CMD ["sh", "-c", "Xvfb :99 -screen 0 1920x1080x24 & gunicorn --workers 3 --bind 0.0.0.0:6000 app:app"]
