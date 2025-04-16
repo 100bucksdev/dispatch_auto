@@ -58,6 +58,12 @@ class Listing:
             raise CustomBadRequestWithDetail("invalid_vin_in_order")
         return vin
 
+    def get_lot_id(self):
+        lot_id = str(self.order.get('lot_id')) if self.order.get('lot_id') else None
+        if not lot_id:
+            raise CustomBadRequestWithDetail("invalid_lot_id_in_order")
+        return lot_id
+
     def set_local_storage(self):
         while True:
             try:
@@ -176,6 +182,13 @@ class Listing:
             self.browser.navigate(self._LISTING_URL)
         time.sleep(0.2)
         self.browser.page.locator('[data-testid="listings_editor_vin_input_0"]').fill(self.get_vin())
+        time.sleep(0.2)
+        print('[INFO] Заполнение Lot Number')
+        try:
+            self.browser.page.locator('[name="lot-number"]').fill(self.get_lot_id())
+        except Exception as e:
+            print(f"[ERROR] Ошибка при заполнении Lot Number: {e}")
+            raise CustomBadRequestWithDetail("lot_number_fill_error")
         time.sleep(0.2)
         self.browser.page.locator('[name="vehicle-detail-text-area-row"]').fill(self._DEFAULT_TEXT_VEHICLE_INFO)
         time.sleep(0.2)
