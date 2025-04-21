@@ -1,5 +1,3 @@
-from werkzeug.exceptions import HTTPException
-
 
 class CustomBadRequestWithDetail(Exception):
     def __init__(self, detail: str = None):
