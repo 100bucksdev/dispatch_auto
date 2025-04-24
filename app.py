@@ -1,58 +1,28 @@
-import time
-
-from flask import Flask, request, make_response
-from browser.automatization import Listing
-from multiprocessing import Process, Queue
-
+from flask import Flask, request
+from automatization import RequestsListing
 app = Flask(__name__)
-
-def run_listing(order, local_storage, mode, queue):
-    try:
-        listing = Listing(order, local_storage)
-        listing.set_local_storage()
-        if mode == 'post':
-            listing.fill_all_fields()
-            listing.post_listing()
-            queue.put({'success': 'listing_posted'})
-        elif mode == 'preview':
-            listing.fill_pickup_info()
-            listing.fill_delivery_info()
-            listing.get_screenshots()
-            queue.put({'image': 'pickup_location.png'})
-        else:
-            queue.put({'error': 'invalid_mode'})
-    except Exception as e:
-        queue.put({'error': str(e)})
 
 @app.route('/post-listing', methods=['POST'])
 def post_listing():
     if request.method != 'POST':
         return {"error": "Only POST requests are allowed"}, 405
-
     data = request.get_json()
     mode = data.get('mode')
     order = data.get('order')
     local_storage = data.get('local_storage')
+    offsite_location = data.get('offsite_location')
+    if not mode or not order or not local_storage:
+        return {"error": "Missing required parameters"}, 400
 
-    if not order or not local_storage:
-        return {'error': 'miss_params'}, 400
+    listing = RequestsListing(order, offsite_location, local_storage, mode)
 
-    queue = Queue()
-    process = Process(target=run_listing, args=(order, local_storage, mode, queue))
-    process.start()
-    process.join()
-    result = queue.get()
-
-    if 'error' in result:
-        return {'error': result['error']}, 400
-    elif 'success' in result:
-        return {'success': result['success']}, 200
-    elif 'image' in result:
-        with open(result['image'], 'rb') as img_file:
-            img_data = img_file.read()
-        return make_response(img_data, 200, {'Content-Type': 'image/png'})
+    if mode == 'preview':
+        return {'pickup_location': listing.pickup_location, 'delivery_location': listing.delivery_location}, 200
     else:
-        return {'error': 'unknown_error'}, 500
+        return {'success': True}, 200
+
+
 
 if __name__ == '__main__':
+    print("Starting Flask on port 6000")
     app.run(debug=True, port=6000)
