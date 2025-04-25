@@ -299,7 +299,7 @@ class RequestsListing:
                     'cell': '',
                     'city': self.pickup_location.get('city'),
                     'contactName': self.pickup_location.get('contact'),
-                    'contactPhone': self.pickup_location.get('contactPhone').replace(' ', '').replace('-', ''),
+                    'contactPhone': self.pickup_location.get('contactPhone').replace(' ', '').replace('-', '') if self.pickup_location.get('contactPhone') else '',
                     'country': 'US',
                     'geoCode':{
                         'latitude': None,
@@ -323,7 +323,7 @@ class RequestsListing:
                     'cell': '',
                     'city': self.delivery_location.get('city'),
                     'contactName': self.delivery_location.get('contact'),
-                    'contactPhone': self.delivery_location.get('contactPhone').replace(' ', '').replace('-', ''),
+                    'contactPhone': self.delivery_location.get('contactPhone').replace(' ', '').replace('-', '') if self.delivery_location.get('contactPhone') else '',
                     'country': 'US',
                     'geoCode': {
                         'latitude': None,
