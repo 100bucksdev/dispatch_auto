@@ -40,6 +40,8 @@ class RequestsListing:
             self.get_price()
             if None in [self.VIN_info, self.price]:
                 raise CustomBadRequestWithDetail("update_local_storage")
+            self.post_listing()
+
 
 
     def get_location(self, get_offsite=True):
