@@ -157,12 +157,12 @@ class RequestsListing:
                             item_name = item.get('companyName', '').upper()
 
 
-                            if item_name == full_string:
+                            if item_name == full_string.upper().strip():
                                 print(f"Exact match found for {full_string}")
                                 success = True
                                 self.pickup_location = item
                                 break
-                            elif len(data) == 1 or current_input == full_string:
+                            elif len(data) == 1 or current_input == full_string.upper().strip():
                                 print(f"Single result match found for {full_string}")
                                 success = True
                                 self.pickup_location = item
