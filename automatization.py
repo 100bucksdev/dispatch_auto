@@ -290,12 +290,13 @@ class RequestsListing:
                 'total': int(self.price)
             },
             'shipperId': self.pickup_location.get('customerId'),
-            'shipperOrderId': self.get_vin()[-6:],
+            'shipperOrderId': f'{self.get_vin()[-6:]} TITLE MUST BE PICKED UP',
             'sla': None,
             'stops': [
                 {
                     'address': self.pickup_location.get('address1'),
                     'address2': self.pickup_location.get('address2'),
+                    'buyerNumber': self.pickup_location.get('buyerNumber'),
                     'cell': '',
                     'city': self.pickup_location.get('city'),
                     'contactName': self.pickup_location.get('contact'),
@@ -320,6 +321,7 @@ class RequestsListing:
                 {
                     'address': self.delivery_location.get('address1'),
                     'address2': self.delivery_location.get('address2'),
+                    'buyerNumber': self.delivery_location.get('buyerNumber'),
                     'cell': '',
                     'city': self.delivery_location.get('city'),
                     'contactName': self.delivery_location.get('contact'),
