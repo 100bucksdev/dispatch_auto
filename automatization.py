@@ -1,3 +1,4 @@
+
 import json
 import re
 from datetime import timedelta, datetime
@@ -88,59 +89,119 @@ class RequestsListing:
         return lot_id
 
     def get_pickup_location(self):
+        """
+        Tries to determine pickup_location in two phases:
+          1. Full-string search (4 variants).
+          2. Fallback to the original char-by-char search if phase-1 finds nothing.
+        Raises CustomBadRequestWithDetail if nothing found after all attempts.
+        """
         max_attempts = 3
-        attempt = 0
         base_url = "https://bff.centraldispatch.com/listing-editor/customers/search-contact"
 
-        # Get auction and location details
+        # ----- helpers ---------------------------------------------------------
+        def _remove_parentheses(s: str) -> str:
+            """Remove parentheses and everything inside them."""
+            return re.sub(r'\([^)]*\)', '', s)
+
+        def _remove_digits(s: str) -> str:
+            """Remove all digits."""
+            return re.sub(r'\d+', '', s)
+
+        def _normalize_spaces(s: str) -> str:
+            """Collapse multiple spaces and strip."""
+            return re.sub(r'\s{2,}', ' ', s).strip()
+
+        def _generate_variants(full: str) -> list[str]:
+            """Generate four required variants for a given full string."""
+            v1 = full
+            v2 = _remove_parentheses(full)
+            v3 = _remove_digits(v2)
+            v4 = _remove_digits(full)
+            ordered_unique = dict.fromkeys(
+                map(_normalize_spaces, (v1, v2, v3, v4))
+            )
+            return list(ordered_unique)  # preserve order, no duplicates
+
+        # ----------------------------------------------------------------------
+
+        # Base data
         auction = self.get_auction().upper()
         location = self.get_location(False).upper()
-        offsite_location = self.get_location()  # Might be None
+        offsite_location = self.get_location()  # may be None
 
-        # List to hold all search strings
-        all_strings = []
+        # Build search strings as раньше
+        all_strings: list[str] = []
 
-        # If offsite_location exists, generate its variations first
-        if offsite_location is not None:
+        if offsite_location:
             offsite_location = offsite_location.upper()
             offsite_clean = re.sub(r'\d+', '', offsite_location.replace('-', ' '))
-            offsite_strings = [
+            all_strings.extend([
                 offsite_location,
                 offsite_location.replace('-', ' '),
                 offsite_clean,
                 offsite_clean.replace('-', ' ')
-            ]
-            all_strings.extend(offsite_strings)
+            ])
 
-        # Generate variations for regular location combined with auction
         location_clean = re.sub(r'\d+', '', location.replace('-', ' '))
-        location_strings = [
+        all_strings.extend([
             f"{auction} {location}",
             f"{auction} {location.replace('-', ' ')}",
             f"{auction} {location_clean}",
             f"{auction} {location_clean.replace('-', ' ')}"
-        ]
-        all_strings.extend(location_strings)
+        ])
 
+        # ----------------------------------------------------------------------
+        #                PHASE 1 — прямые запросы целой строкой
+        # ----------------------------------------------------------------------
+        try:
+            for full_string in all_strings:
+                for variant in _generate_variants(full_string):
+                    encoded = quote(variant)
+                    url = f"{base_url}?keyword={encoded}"
+                    response = requests.get(url, headers=self.headers)
+
+                    if response.status_code == 401:
+                        print("Unauthorized access (401) - setting pickup_location to None")
+                        self.pickup_location = None
+                        return
+
+                    data = response.json() or []
+                    if not data:
+                        continue
+
+                    # 1) точное совпадение
+                    exact = next(
+                        (item for item in data
+                         if item.get('companyName', '').upper().strip() == variant.upper()),
+                        None
+                    )
+                    if exact:
+                        self.pickup_location = exact
+                        return
+
+                    # 2) единственный результат на запрос
+                    if len(data) == 1:
+                        self.pickup_location = data[0]
+                        return
+        except requests.RequestException as e:
+            print(f"Phase-1 RequestException: {e}")
+
+        # ----------------------------------------------------------------------
+        #          PHASE 2 — fallback к исходному «по символам» методу
+        # ----------------------------------------------------------------------
+        attempt = 0
         while attempt < max_attempts:
             print(f"Attempt {attempt + 1}/{max_attempts}")
             try:
                 success = False
                 for full_string in all_strings:
-                    # Split the string into auction and location parts
-                    current_location = full_string[len(auction) + 1:]  # Skip auction and space
-                    print(f"Trying string: {full_string}")
-
-                    # Now process location character by character
+                    current_location = full_string[len(auction) + 1:]  # skip auction and space
                     current_input = auction + " "
                     for char in current_location:
                         current_input += char
                         encoded_string = quote(current_input)
                         url = f"{base_url}?keyword={encoded_string}"
-
-
                         response = requests.get(url, headers=self.headers)
-
 
                         if response.status_code == 401:
                             print("Unauthorized access (401) - setting pickup_location to None")
@@ -148,38 +209,36 @@ class RequestsListing:
                             return
 
                         data = response.json()
-
-                        if not data or len(data) == 0:
-                            print("No data returned, moving to next string")
+                        if not data:
                             break
 
-                        for item in data:
-                            item_name = item.get('companyName', '').upper()
+                        # exact match
+                        exact_match = next(
+                            (item for item in data if item.get('companyName', '').upper().strip() ==
+                             full_string.upper().strip()),
+                            None
+                        )
+                        if exact_match:
+                            self.pickup_location = exact_match
+                            success = True
+                            break
 
+                        # single result for full input
+                        if (current_input.upper().strip() == full_string.upper().strip()
+                                and len(data) == 1):
+                            self.pickup_location = data[0]
+                            success = True
+                            break
 
-                            if item_name == full_string.upper().strip():
-                                print(f"Exact match found for {full_string}")
-                                success = True
-                                self.pickup_location = item
-                                break
-                            elif len(data) == 1 or current_input == full_string.upper().strip():
-                                print(f"Single result match found for {full_string}")
-                                success = True
-                                self.pickup_location = item
-                                break
-
-                        if success:
-                            print("Successful match found, returning")
-                            return
                     if success:
-                        print("Breaking inner loop due to success")
-                        break
+                        return
                 attempt += 1
+
             except requests.RequestException as e:
-                print(f"RequestException occurred: {str(e)}")
+                print(f"RequestException occurred: {e}")
                 attempt += 1
             except Exception as e:
-                print(f"Unexpected error occurred: {str(e)}")
+                print(f"Unexpected error occurred: {e}")
                 attempt += 1
 
         print("Max attempts reached, raising CustomBadRequestWithDetail")
