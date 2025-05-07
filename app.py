@@ -1,6 +1,14 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from automatization import RequestsListing
+from exeption import CustomBadRequestWithDetail
+
 app = Flask(__name__)
+
+@app.errorhandler(CustomBadRequestWithDetail)
+def handle_custom_bad_request(error):
+    response = jsonify({"error": error.detail})
+    response.status_code = error.status_code
+    return response
 
 @app.route('/post-listing', methods=['POST'])
 def post_listing():
